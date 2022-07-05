@@ -13,7 +13,7 @@ example config, save it into `src/config/config.json`:
         "qos": 0
     },
     "redis": {
-        "max_cache_size": 144
+        "max_cache_size": 1000
     },
     "express": {
         "port": 8080
