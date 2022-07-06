@@ -133,7 +133,7 @@ app.get("/data", async (req, res) => {
   let deviceList = [];
   dataObj.forEach((v) => {
     deviceInfo = getDeviceInfo(v.id);
-    if deviceInfo != null {
+    if (deviceInfo != null) {
       deviceList.append({
         time: v.time,
         id: deviceInfo.id,
