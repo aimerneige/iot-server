@@ -76,12 +76,12 @@ client.on("connect", () => {
 
 client.on("message", async (topic, message) => {
   console.log(`receive message from topic '${topic}'`);
-  message: JSON.parse(message.toString()),
-    (record = {
-      time: new Date().toLocaleString("zh-CN"),
-      id: message.id,
-      data: message.data,
-    });
+  var messageObj = JSON.parse(message.toString());
+  record = {
+    time: new Date().toLocaleString("zh-CN"),
+    id: messageObj.id,
+    data: messageObj.data,
+  }
   console.log(record);
   // save to redis
   redisKey = MQTT_TOPIC + "/data";
