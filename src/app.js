@@ -49,10 +49,12 @@ client.on("connect", () => {
 
 client.on("message", async (topic, message) => {
   console.log(`receive message from topic '${topic}'`);
-  record = {
-    time: new Date().toLocaleString("zh-CN"),
-    message: JSON.parse(message.toString()),
-  };
+  message: JSON.parse(message.toString()),
+    (record = {
+      time: new Date().toLocaleString("zh-CN"),
+      id: message.id,
+      data: message.data,
+    });
   console.log(record);
   // save to redis
   redisClient.lPush(topic, JSON.stringify(record));
