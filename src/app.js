@@ -41,7 +41,7 @@ async function getNextId() {
 }
 
 async function getDeviceInfo(deviceId) {
-  const redisKey = MQTT_TOPIC + "/device"
+  const redisKey = MQTT_TOPIC + "/device";
   let redisData = await redisClient.lRange(redisKey, 0, -1);
   let deviceItems = JSON.parse("[" + redisData + "]");
   deviceItems.forEach((v) => {
@@ -81,7 +81,7 @@ client.on("message", async (topic, message) => {
     time: new Date().toLocaleString("zh-CN"),
     id: messageObj.id,
     data: messageObj.data,
-  }
+  };
   console.log(record);
   // save to redis
   redisKey = MQTT_TOPIC + "/data";
@@ -150,19 +150,36 @@ app.get("/data", async (req, res) => {
   });
 });
 
+app.get("/device", async (req, res) => {
+  res.type("application/json");
+  const redisKey = MQTT_TOPIC + "/device";
+  let redisData = await redisClient.lRange(redisKey, 0, -1);
+  let deviceItems = JSON.parse("[" + redisData + "]");
+  res.status(200);
+  res.send({
+    status: 200,
+    message: "get device data successful!",
+    data: deviceItems,
+  });
+});
+
 // add device
 app.post("/device", async (req, res) => {
   res.type("application/json");
   let deviceType = req.body.type;
   let deviceName = req.body.name;
   let deviceChildType = req.body.childType;
-  if deviceType === undefined || deviceName === undefined || deviceChildType === undefined {
+  if (
+    deviceType === undefined ||
+    deviceName === undefined ||
+    deviceChildType === undefined
+  ) {
     res.status(400);
     res.send({
       status: 400,
       message: "bad request",
       data: null,
-    })
+    });
   } else {
     res.status(200);
     redisKey = MQTT_TOPIC + "/device";
@@ -171,8 +188,13 @@ app.post("/device", async (req, res) => {
       type: deviceType,
       name: deviceName,
       childType: deviceChildType,
-    }
+    };
     redisClient.lPush(redisKey, JSON.stringify(device));
+    res.send({
+      status: 200,
+      message: "create success",
+      data: device,
+    });
   }
 });
 
