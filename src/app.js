@@ -158,8 +158,28 @@ app.get("/device", async (req, res) => {
   res.status(200);
   res.send({
     status: 200,
-    message: "get device data successful!",
+    message: "success",
     data: deviceItems,
+  });
+});
+
+app.get("/device/data", async (req, res) => {
+  deviceId = req.query.id;
+  res.type("application/json");
+  let redisKey = MQTT_TOPIC + "/data";
+  let redisData = await redisClient.lRange(redisKey, 0, -1);
+  let dataObj = JSON.parse("[" + redisData + "]");
+  let dataList = [];
+  dataObj.forEach((v) => {
+    if (v.id == deviceId) {
+      dataList.append(v);
+    }
+  });
+  res.status(200);
+  res.send({
+    status: 200,
+    message: "success",
+    data: dataList,
   });
 });
 
