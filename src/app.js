@@ -40,18 +40,6 @@ async function getNextId() {
   }
 }
 
-async function getDeviceInfo(deviceId) {
-  const redisKey = MQTT_TOPIC + "/device";
-  let redisData = await redisClient.lRange(redisKey, 0, -1);
-  let deviceItems = JSON.parse("[" + redisData + "]");
-  deviceItems.forEach((v) => {
-    if (v.id == deviceId) {
-      return v;
-    }
-  });
-  return null;
-}
-
 // mqtt client
 const client = mqtt.connect(MQTT_WS_URL, {
   clientId: MQTT_CLIENT_ID,
@@ -76,7 +64,14 @@ client.on("connect", () => {
 
 client.on("message", async (topic, message) => {
   console.log(`receive message from topic '${topic}'`);
-  var messageObj = JSON.parse(message.toString());
+  let messageObj = {};
+  try {
+    messageObj = JSON.parse(message.toString());
+  } catch (error) {
+    console.log("not a valid json:", message);
+    console.log(error);
+    return;
+  }
   record = {
     time: new Date().toLocaleString("zh-CN"),
     id: messageObj.id,
@@ -85,7 +80,7 @@ client.on("message", async (topic, message) => {
   console.log(record);
   // save to redis
   redisKey = MQTT_TOPIC + "/data";
-  redisClient.lPush(redisKey, JSON.stringify(record));
+  redisClient.rPush(redisKey, JSON.stringify(record));
   // trim redis when it is too large
   size = await redisClient.lLen(redisKey);
   if (size > MAX_CACHE_SIZE) {
@@ -131,18 +126,35 @@ app.get("/data", async (req, res) => {
   let redisData = await redisClient.lRange(redisKey, 0, -1);
   let dataObj = JSON.parse("[" + redisData + "]");
   let deviceList = [];
-  dataObj.forEach((v) => {
-    deviceInfo = getDeviceInfo(v.id);
-    if (deviceInfo != null) {
-      deviceList.append({
-        time: v.time,
-        id: deviceInfo.id,
-        type: deviceInfo.type,
-        name: deviceInfo.name,
-        childType: deviceInfo.childType,
+  let deviceInfoDict = {};
+  for (i = 0; i < dataObj.length; i++) {
+    let data = dataObj[i];
+    let deviceId = data.id;
+    if (deviceInfoDict[data.id] === undefined) {
+      const redisKey = MQTT_TOPIC + "/device";
+      let redisData = await redisClient.lRange(redisKey, 0, -1);
+      let deviceItems = JSON.parse("[" + redisData + "]");
+      let notfound = true;
+      deviceItems.forEach((v) => {
+        if (v.id == deviceId) {
+          deviceInfoDict[v.id] = v;
+          notfound = false;
+        }
       });
+      if (notfound) {
+        continue;
+      }
     }
-  });
+    let info = deviceInfoDict[data.id];
+    deviceList.push({
+      time: data.time,
+      id: info.id,
+      type: info.type,
+      name: info.name,
+      childType: info.childType,
+      data: data.data,
+    });
+  }
   res.send({
     status: 200,
     message: "success",
@@ -164,7 +176,7 @@ app.get("/device", async (req, res) => {
 });
 
 app.get("/device/data", async (req, res) => {
-  deviceId = req.query.id;
+  let deviceId = req.query.id;
   res.type("application/json");
   let redisKey = MQTT_TOPIC + "/data";
   let redisData = await redisClient.lRange(redisKey, 0, -1);
@@ -172,7 +184,10 @@ app.get("/device/data", async (req, res) => {
   let dataList = [];
   dataObj.forEach((v) => {
     if (v.id == deviceId) {
-      dataList.append(v);
+      dataList.push({
+        time: v.time,
+        data: v.data,
+      });
     }
   });
   res.status(200);
@@ -209,7 +224,7 @@ app.post("/device", async (req, res) => {
       name: deviceName,
       childType: deviceChildType,
     };
-    redisClient.lPush(redisKey, JSON.stringify(device));
+    redisClient.rPush(redisKey, JSON.stringify(device));
     res.send({
       status: 200,
       message: "create success",
