@@ -20,3 +20,27 @@ example config, save it into `src/config/config.json`:
     }
 }
 ```
+
+Test Run:
+
+```bash
+npm run test
+```
+
+Install `forever` before start service:
+
+```bash
+npm install --global forever
+```
+
+Start Service:
+
+```bash
+npm run start
+```
+
+Stop Servive:
+
+```bash
+npm run stop
+```
