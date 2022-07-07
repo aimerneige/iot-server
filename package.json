@@ -4,7 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node src/app.js",
+    "start": "forever start src/app.js",
+    "stop": "forever stop src/app.js"
   },
   "author": "Aimer Neige",
   "dependencies": {
