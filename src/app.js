@@ -155,6 +155,7 @@ app.get("/data", async (req, res) => {
       data: data.data,
     });
   }
+  console.log("deviceInfoDict", deviceInfoDict);
   res.send({
     status: 200,
     message: "success",
