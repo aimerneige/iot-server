@@ -84,7 +84,7 @@ client.on("message", async (topic, message) => {
   // trim redis when it is too large
   size = await redisClient.lLen(redisKey);
   if (size > MAX_CACHE_SIZE) {
-    redisClient.lTrim(redisKey, 0, MAX_CACHE_SIZE - 1);
+    redisClient.lTrim(redisKey, 1, -1);
   }
 });
 
